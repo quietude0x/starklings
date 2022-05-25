@@ -12,7 +12,7 @@
 # TODO: Fix the say_hello function by returning the appropriate short strings
 
 func say_hello() -> (hello_string : felt, hello_felt : felt, hello_hex : felt):
-    # FILL ME
+   
     return (hello_string, hello_felt, hello_hex)
 end
 
