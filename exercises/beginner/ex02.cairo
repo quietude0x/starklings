@@ -17,6 +17,11 @@ from starkware.cairo.common.math import assert_le
 # Both members are of type `felt`
 # https://www.cairo-lang.org/docs/reference/syntax.html#structs
 
+struct Star:
+    member name : felt
+    member size : felt
+end
+
 @storage_var
 func dust(address : felt) -> (amount : felt):
 end
@@ -25,7 +30,7 @@ end
 # Update the `star` storage to store `Star` instead of `felt`
 
 @storage_var
-func slot(address : felt) -> (slot : felt):
+func slot(address : Star) -> (slot : Star):
 end
 
 @event
@@ -45,6 +50,30 @@ end
 # TODO
 # Update the `light_star` external so it take a `Star` struct instead of the amount of dust
 # Caller `dust` storage must be deducted form a amount equal to the star size
+
+@external
+func light_star{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
+    Star
+):
+    # TODO
+    # Get the caller address
+    let (address) = get_caller_address()
+    # Get the amount on dust owned by the caller
+    let (current_amount) = dust.read(address)
+    # Make sure this amount is at least equal to `dust_amount`
+    assert_le(dust_amount, current_amount) # i.e require(dust amount <= current_amout)
+    # Get the caller next available `slot`
+    let (next_available_slot) = slot.read(address)
+    # Update the amount of dust owned by the caller
+    dust.write(address, current_amount - dust_amount)
+    # Register the newly created star, with a size equal to `dust_amount`
+    star.write(address, next_available_slot, dust_amount)
+    # Increment the caller next available slot
+    slot.write(address, next_available_slot + 1)
+    # Emit an `a_star_is_born` even with appropiate valued
+    a_star_is_born.emit(address, next_available_slot, dust_amount) 
+    return ()
+end
 
 @view
 func view_dust{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
